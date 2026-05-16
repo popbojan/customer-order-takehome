@@ -8,6 +8,9 @@ COPY product-catalog-service product-catalog-service
 RUN mvn -pl product-catalog-service -am package -DskipTests
 
 FROM eclipse-temurin:21-jre
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /workspace/product-catalog-service/target/product-catalog-service-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8081

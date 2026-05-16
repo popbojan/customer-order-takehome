@@ -4,6 +4,12 @@ server:
 catalog:
   base-url: ${CATALOG_BASE_URL:http://localhost:8081}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5434/orders

@@ -1,6 +1,12 @@
 server:
   port: 8081
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/catalog

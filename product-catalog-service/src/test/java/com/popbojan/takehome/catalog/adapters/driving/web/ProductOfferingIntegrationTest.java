@@ -48,9 +48,12 @@ class ProductOfferingIntegrationTest {
 
     @Test
     void getProductOfferingReturns404ForUnknownOffering() {
-        var response = restTemplate.getForEntity(url("/product-offerings/does-not-exist"), String.class);
+        var response = restTemplate.getForEntity(url("/product-offerings/does-not-exist"), java.util.Map.class);
 
         assertThat(response.getStatusCode().value()).isEqualTo(404);
+        assertThat(response.getBody()).containsEntry("status", 404);
+        assertThat(response.getBody()).containsKey("path");
+        assertThat(response.getBody()).containsKey("message");
     }
 
     @Test

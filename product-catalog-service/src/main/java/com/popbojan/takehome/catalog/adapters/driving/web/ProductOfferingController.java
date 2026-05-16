@@ -2,9 +2,9 @@ package com.popbojan.takehome.catalog.adapters.driving.web;
 
 import com.popbojan.takehome.catalog.domain.GetProductOfferingUseCase;
 import com.popbojan.takehome.catalog.domain.ListProductOfferingsUseCase;
+import com.popbojan.takehome.catalog.domain.exception.ProductOfferingNotFoundException;
 import com.popbojan.takehome.catalog.domain.model.ProductOffering;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +26,11 @@ public class ProductOfferingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductOfferingResponse> getById(@PathVariable("id") String id) {
-        return getProductOfferingUseCase.execute(id)
+    public ProductOfferingResponse getById(@PathVariable("id") String id) {
+        return getProductOfferingUseCase
+                .execute(id)
                 .map(this::mapToResponse)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ProductOfferingNotFoundException(id));
     }
 
     @GetMapping

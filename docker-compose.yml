@@ -41,6 +41,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: catalog
     ports:
       - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     depends_on:
       catalog-db:
         condition: service_healthy
@@ -56,11 +62,17 @@ services:
       CATALOG_BASE_URL: http://product-catalog-service:8081
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 45s
     depends_on:
       order-db:
         condition: service_healthy
       product-catalog-service:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   catalog_pg:

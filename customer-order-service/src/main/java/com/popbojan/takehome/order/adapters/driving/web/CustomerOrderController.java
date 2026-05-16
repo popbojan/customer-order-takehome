@@ -90,7 +90,7 @@ public class CustomerOrderController {
     }
 
     @PatchMapping("/{id}")
-    public OrderResponse patch(@PathVariable("id") UUID id, @RequestBody PatchOrderRequest request) {
+    public OrderResponse patch(@PathVariable("id") UUID id, @Valid @RequestBody PatchOrderRequest request) {
         return orderMapper.mapToResponse(patchOrderUseCase.execute(orderMapper.mapToInput(id, request)));
     }
 

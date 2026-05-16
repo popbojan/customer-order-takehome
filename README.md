@@ -17,10 +17,12 @@ The compose file starts:
 
 - `catalog-db` Postgres, exposed on host port `5433`
 - `order-db` Postgres, exposed on host port `5434`
-- `product-catalog-service`, exposed on `8081`
-- `customer-order-service`, exposed on `8080`
+- `product-catalog-service`, exposed on `8081` (waits until `/actuator/health` succeeds)
+- `customer-order-service`, exposed on `8080` (starts only after the catalog **and** databases are healthy)
 
 No extra environment variables are required for the Docker path.
+
+Actuator **`/actuator/health`** is exposed on **8080** and **8081** for Docker Compose health checks (the images install `curl` for this).
 
 ## Quick Smoke Test
 
@@ -115,11 +117,17 @@ Create stores `idempotency_key`, a SHA-256 hash of the canonical request body, a
 - Same key + different payload returns `409 Conflict`.
 - Fresh create returns `201 Created` and `Idempotent-Replay: false`.
 
-The implementation is sufficient for a single Postgres-backed service. In a higher-concurrency production setup, I would tighten this further with transaction isolation and insert-first conflict handling around the idempotency table.
+Create runs in **one Spring transaction**. For requests that send an idempotency key, the flow first acquires a **Postgres advisory transaction lock** keyed by that header so concurrent creates with the same key cannot observe a stale "empty" row and insert duplicate orders. This is Postgres-specific.
+
+### Pagination
+
+`/customer-orders` list paging uses **`limit`** and **`offset`** with **`ORDER BY created_at DESC`**, mapped through JPA `setFirstResult` / `setMaxResults` so **any** offset aligns with Spring Data semantics (pages are **not** approximated via `page = offset/limit`).
 
 ### Catalog Communication
 
 The order service uses HTTP (`GET /product-offerings/{id}`) through a driven adapter. A `404` means the product offering is unknown and the order request is rejected with `422`. Other catalog failures are treated as `503 Service Unavailable`; I chose fail-closed because accepting an order with unknown product references would violate ownership boundaries.
+
+The catalog REST layer returns the **same `{ timestamp, status, error, message, path }` JSON** for predictable failures (`404`, invalid JSON payloads, bean validation hits) via `ApiExceptionHandler`.
 
 ### Persistence
 
@@ -141,6 +149,7 @@ Errors use one consistent response shape:
 
 ## Known Limitations
 
+- Postgres-specific advisory locks serialize concurrent creates sharing the same `Idempotency-Key`; a different DB would need another mutex strategy.
 - The catalog exposes listing only as a convenience; the required contract is lookup by id.
 - PATCH does replacement for nested structures instead of full deep merge.
 - Docker image builds skip tests for faster `docker compose up`; run tests separately with Maven if desired.

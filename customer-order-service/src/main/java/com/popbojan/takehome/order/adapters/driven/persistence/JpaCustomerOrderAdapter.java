@@ -8,7 +8,6 @@ import com.popbojan.takehome.order.domain.port.CustomerOrderPort;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class JpaCustomerOrderAdapter implements CustomerOrderPort {
 
     private final CustomerOrderRepository repository;
+    private final JpaCustomerOrderQueries queries;
 
-    public JpaCustomerOrderAdapter(CustomerOrderRepository repository) {
+    public JpaCustomerOrderAdapter(CustomerOrderRepository repository, JpaCustomerOrderQueries queries) {
         this.repository = repository;
+        this.queries = queries;
     }
 
     @Override
@@ -34,11 +35,7 @@ public class JpaCustomerOrderAdapter implements CustomerOrderPort {
 
     @Override
     public List<CustomerOrder> find(OrderCategory category, int limit, int offset) {
-        var page = PageRequest.of(offset / limit, limit);
-        if (category != null) {
-            return repository.findByCategoryOrderByCreatedAtDesc(category, page).stream().map(this::mapToDomain).toList();
-        }
-        return repository.findAllByOrderByCreatedAtDesc(page).stream().map(this::mapToDomain).toList();
+        return queries.findPage(category, limit, offset).stream().map(this::mapToDomain).toList();
     }
 
     @Override
@@ -59,8 +56,7 @@ public class JpaCustomerOrderAdapter implements CustomerOrderPort {
                 order.paymentMethod().type(),
                 order.paymentMethod().iban(),
                 order.createdAt(),
-                order.updatedAt()
-        );
+                order.updatedAt());
     }
 
     private CustomerOrder mapToDomain(CustomerOrderEntity entity) {
@@ -75,7 +71,6 @@ public class JpaCustomerOrderAdapter implements CustomerOrderPort {
                         .toList(),
                 new PaymentMethod(entity.getPaymentType(), entity.getPaymentIban()),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
+                entity.getUpdatedAt());
     }
 }

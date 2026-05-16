@@ -11,6 +11,7 @@ import com.popbojan.takehome.order.domain.model.CreateOrderResult;
 import com.popbojan.takehome.order.domain.model.CustomerOrder;
 import com.popbojan.takehome.order.domain.model.IdempotencyRecord;
 import com.popbojan.takehome.order.domain.port.IdempotencyPort;
+import org.springframework.transaction.annotation.Transactional;
 
 public class CreateOrderUseCase {
 
@@ -34,14 +35,23 @@ public class CreateOrderUseCase {
         this.idempotencyPort = idempotencyPort;
     }
 
+    /**
+     * One transaction spans validation, persistence, and idempotency bookkeeping so replay never races a fresh insert
+     * for the same key (paired with Postgres advisory locking per key).
+     */
+    @Transactional
     public CreateOrderResult execute(CreateOrderInput input) {
-        if (input.idempotencyKey() != null && !input.idempotencyKey().isBlank()) {
+        boolean idempotentFlow =
+                input.idempotencyKey() != null && !input.idempotencyKey().isBlank();
+        if (idempotentFlow) {
+            idempotencyPort.lockKey(input.idempotencyKey());
             var existing = idempotencyPort.findByKey(input.idempotencyKey());
             if (existing.isPresent()) {
                 if (!existing.get().payloadHash().equals(input.payloadHash())) {
                     throw new IdempotencyConflictException();
                 }
-                CustomerOrder order = getOrderActivity.execute(existing.get().orderId())
+                CustomerOrder order = getOrderActivity
+                        .execute(existing.get().orderId())
                         .orElseThrow(() -> new OrderNotFoundException(existing.get().orderId()));
                 return new CreateOrderResult(order, true);
             }
@@ -51,7 +61,7 @@ public class CreateOrderUseCase {
         validateProductOfferingsActivity.execute(input.orderItems());
 
         CustomerOrder order = createOrderActivity.execute(input);
-        if (input.idempotencyKey() != null && !input.idempotencyKey().isBlank()) {
+        if (idempotentFlow) {
             idempotencyPort.save(new IdempotencyRecord(input.idempotencyKey(), input.payloadHash(), order.id()));
         }
         return new CreateOrderResult(order, false);
