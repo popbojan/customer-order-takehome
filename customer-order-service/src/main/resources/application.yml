@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+catalog:
+  base-url: ${CATALOG_BASE_URL:http://localhost:8081}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/orders
+    username: orders
+    password: orders
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true

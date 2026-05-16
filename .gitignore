@@ -1,0 +1,10 @@
+target/
+.idea/
+*.iml
+.DS_Store
+*.log
+.env
+
+# Cursor IDE — generierte/ephemere Dateien (Regeln/Skripte unter .cursor/ ggf. absichtlich versionieren)
+.cursor/debug.log
+.cursor/plans/

@@ -1,0 +1,67 @@
+services:
+  catalog-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - catalog_pg:/var/lib/postgresql/data
+
+  order-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - order_pg:/var/lib/postgresql/data
+
+  product-catalog-service:
+    build:
+      context: .
+      dockerfile: product-catalog-service/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://catalog-db:5432/catalog
+      SPRING_DATASOURCE_USERNAME: catalog
+      SPRING_DATASOURCE_PASSWORD: catalog
+    ports:
+      - "8081:8081"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+
+  customer-order-service:
+    build:
+      context: .
+      dockerfile: customer-order-service/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-db:5432/orders
+      SPRING_DATASOURCE_USERNAME: orders
+      SPRING_DATASOURCE_PASSWORD: orders
+      CATALOG_BASE_URL: http://product-catalog-service:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      product-catalog-service:
+        condition: service_started
+
+volumes:
+  catalog_pg:
+  order_pg:
