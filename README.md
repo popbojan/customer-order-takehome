@@ -97,7 +97,7 @@ adapters/
   driven/catalog/
 ```
 
-The domain owns business rules and talks to interfaces (`CustomerOrderPort`, `IdempotencyPort`, `ProductCatalogPort`). Spring MVC, JPA, and HTTP clients live in adapters. `OrderConfiguration` and `CatalogConfiguration` are the composition roots that wire activities and use cases together.
+The domain owns business rules and talks to interfaces (`CustomerOrderPort`, `IdempotencyPort`, `ProductCatalogPort`, `OrderCreateTxnPort`). Spring MVC, JPA, and HTTP clients live in adapters. **`RunCreateOrderTransactionActivity`** invokes **`OrderCreateTxnPort`**; **`OrderCreateRepositoryService`** (`adapters/driven/persistence`) implements it with **`@Transactional persistInTransaction`**, grouping Postgres advisory locking, inserts, and idempotency in one JDBC transaction. `OrderConfiguration` and `CatalogConfiguration` wire activities and use cases together.
 
 ## Decisions and Tradeoffs
 
@@ -117,7 +117,7 @@ Create stores `idempotency_key`, a SHA-256 hash of the canonical request body, a
 - Same key + different payload returns `409 Conflict`.
 - Fresh create returns `201 Created` and `Idempotent-Replay: false`.
 
-Create runs in **one Spring transaction**. For requests that send an idempotency key, the flow first acquires a **Postgres advisory transaction lock** keyed by that header so concurrent creates with the same key cannot observe a stale "empty" row and insert duplicate orders. This is Postgres-specific.
+Create runs in **one Spring transaction** in **`OrderCreateRepositoryService#persistInTransaction`** (implements **`OrderCreateTxnPort`**), entered via **`RunCreateOrderTransactionActivity`**. For requests that send an idempotency key, the flow acquires a **Postgres advisory transaction lock** keyed by that header so concurrent creates with the same key cannot observe a stale "empty" row and insert duplicate orders. This is Postgres-specific.
 
 ### Pagination
 

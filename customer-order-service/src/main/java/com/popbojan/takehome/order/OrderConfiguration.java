@@ -7,18 +7,34 @@ import com.popbojan.takehome.order.domain.PatchOrderUseCase;
 import com.popbojan.takehome.order.domain.activity.CreateOrderActivity;
 import com.popbojan.takehome.order.domain.activity.GetOrderActivity;
 import com.popbojan.takehome.order.domain.activity.ListOrdersActivity;
+import com.popbojan.takehome.order.domain.activity.RunCreateOrderTransactionActivity;
 import com.popbojan.takehome.order.domain.activity.UpdateOrderActivity;
 import com.popbojan.takehome.order.domain.activity.ValidateOrderActivity;
 import com.popbojan.takehome.order.domain.activity.ValidateProductOfferingsActivity;
 import com.popbojan.takehome.order.domain.activity.ValidateStateTransitionActivity;
 import com.popbojan.takehome.order.domain.port.CustomerOrderPort;
-import com.popbojan.takehome.order.domain.port.IdempotencyPort;
+import com.popbojan.takehome.order.domain.port.OrderCreateTxnPort;
 import com.popbojan.takehome.order.domain.port.ProductCatalogPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OrderConfiguration {
+
+    @Bean
+    ValidateOrderActivity validateOrderActivity() {
+        return new ValidateOrderActivity();
+    }
+
+    @Bean
+    ValidateProductOfferingsActivity validateProductOfferingsActivity(ProductCatalogPort productCatalogPort) {
+        return new ValidateProductOfferingsActivity(productCatalogPort);
+    }
+
+    @Bean
+    CreateOrderActivity createOrderActivity(CustomerOrderPort customerOrderPort) {
+        return new CreateOrderActivity(customerOrderPort);
+    }
 
     @Bean
     GetOrderActivity getOrderActivity(CustomerOrderPort customerOrderPort) {
@@ -36,33 +52,28 @@ public class OrderConfiguration {
     }
 
     @Bean
-    CreateOrderUseCase createOrderUseCase(
-            CustomerOrderPort customerOrderPort,
-            ProductCatalogPort productCatalogPort,
-            GetOrderActivity getOrderActivity,
-            IdempotencyPort idempotencyPort
-    ) {
-        return new CreateOrderUseCase(
-                new CreateOrderActivity(customerOrderPort),
-                new ValidateOrderActivity(),
-                new ValidateProductOfferingsActivity(productCatalogPort),
-                getOrderActivity,
-                idempotencyPort
-        );
+    RunCreateOrderTransactionActivity runCreateOrderTransactionActivity(OrderCreateTxnPort orderCreateTxnPort) {
+        return new RunCreateOrderTransactionActivity(orderCreateTxnPort);
+    }
+
+    @Bean
+    CreateOrderUseCase createOrderUseCase(RunCreateOrderTransactionActivity runCreateOrderTransactionActivity) {
+        return new CreateOrderUseCase(runCreateOrderTransactionActivity);
     }
 
     @Bean
     PatchOrderUseCase patchOrderUseCase(
             CustomerOrderPort customerOrderPort,
             ProductCatalogPort productCatalogPort,
-            GetOrderActivity getOrderActivity
+            GetOrderActivity getOrderActivity,
+            ValidateOrderActivity validateOrderActivity,
+            ValidateProductOfferingsActivity validateProductOfferingsActivity
     ) {
         return new PatchOrderUseCase(
                 getOrderActivity,
                 new UpdateOrderActivity(customerOrderPort),
-                new ValidateOrderActivity(),
-                new ValidateProductOfferingsActivity(productCatalogPort),
-                new ValidateStateTransitionActivity()
-        );
+                validateOrderActivity,
+                validateProductOfferingsActivity,
+                new ValidateStateTransitionActivity());
     }
 }

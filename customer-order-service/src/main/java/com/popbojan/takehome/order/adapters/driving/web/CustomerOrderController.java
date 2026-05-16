@@ -85,8 +85,7 @@ public class CustomerOrderController {
                 page.items().stream().map(orderMapper::mapToResponse).toList(),
                 page.total(),
                 page.limit(),
-                page.offset()
-        );
+                page.offset());
     }
 
     @PatchMapping("/{id}")
