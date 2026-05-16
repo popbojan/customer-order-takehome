@@ -1,4 +1,4 @@
-package com.popbojan.takehome.order.adapters.driving.web;
+package com.popbojan.takehome.order.adapters.driving.web.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

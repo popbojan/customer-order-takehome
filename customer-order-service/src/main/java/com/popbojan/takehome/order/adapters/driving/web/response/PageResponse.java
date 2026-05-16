@@ -1,4 +1,4 @@
-package com.popbojan.takehome.order.adapters.driving.web;
+package com.popbojan.takehome.order.adapters.driving.web.response;
 
 import java.util.List;
 

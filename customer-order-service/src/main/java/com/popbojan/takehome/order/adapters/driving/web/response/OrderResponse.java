@@ -1,4 +1,4 @@
-package com.popbojan.takehome.order.adapters.driving.web;
+package com.popbojan.takehome.order.adapters.driving.web.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

@@ -7,6 +7,7 @@ import com.popbojan.takehome.order.domain.exception.InvalidOrderException;
 import com.popbojan.takehome.order.domain.exception.InvalidStateTransitionException;
 import com.popbojan.takehome.order.domain.exception.OrderNotFoundException;
 import com.popbojan.takehome.order.domain.exception.UnknownProductOfferingException;
+import com.popbojan.takehome.order.adapters.driving.web.response.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;

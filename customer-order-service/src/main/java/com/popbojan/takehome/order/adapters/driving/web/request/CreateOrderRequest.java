@@ -1,4 +1,4 @@
-package com.popbojan.takehome.order.adapters.driving.web;
+package com.popbojan.takehome.order.adapters.driving.web.request;
 
 import com.popbojan.takehome.order.domain.model.OrderCategory;
 import jakarta.validation.Valid;
